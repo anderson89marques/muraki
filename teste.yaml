@@ -1,0 +1,40 @@
+--- #inicio do arquivo
+- hosts: vendafacil-prod
+  vars:
+    - warfile: /var/lib/tomcat7/webapps/coadquirencia.war
+    - wardata: cmd=(stat  -c "%y" {{ warfile }} | cut -d ' ' -f 1)
+    - bakfile: /home/devop/backup/deploy/coadquirencia.{{ wardata }}.war
+    - warpath: /home/devop/workspace/vendafacil/web-coadquirencia/coadquirencia.war
+  tasks:
+    - description: Mudando para usuário root
+      change_user: name=root passwd=mouse32
+    - description: Entrando no diretório webcoadquirencia
+      shell: cd /home/devop/workspace/vendafacil/web-coadquirencia/
+    - description: Mudando o dono do diretório target
+      shell: chown devop:devop -R target
+    - description: Mudando de usuário devop
+      change_user: name=devop passwd=T636:6yX
+    - description: Entrando no diretório do projeto
+      shell: cd /home/devop/workspace/vendafacil/web-coadquirencia/
+    - description: Status do git
+      shell: git status
+    #- include: testeVarsJinja2.yaml # vai ser feito o load desse arquivo e as tarefas vão ser executadas como parte desse
+    - description: Fazendo pull do projeto
+      shell: git pull origin vendafacil-prod
+    - description: Export Java_opts
+      shell: export JAVA_OPTS="-Djava.awt.headless=true -Xmx2048m -XX:MaxPermSize=768m"
+    - description: Gvm use grails
+      shell: gvm use grails 2.1.0
+    # fazer o comando include para mesclar yaml files
+    # e adicionar o arquivo
+    - description: Cleaning application...
+      shell: grails clean
+    #- description: Generating war...
+    #  shell: grails war coadquirencia.war
+    #- description: Fazendo backup do .war
+    #  copy: src={{ warfile }} dest={{ bakfile}}
+    #- description: Undeploy application
+    #  shell: wget "http://admin:jmml72@localhost:8080/manager/text/undeploy?path=/coadquirencia" -O - -q
+    #- description: Deploy application
+    #  shell: wget "http://admin:jmml72@localhost:8080/manager/text/deploy?path=/coadquirencia&war=file:{{warpath}}" -O - -q
+... #fim do arquivo

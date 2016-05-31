@@ -1,0 +1,27 @@
+--- #inicio do arquivo
+# se a variável é resultado de comando via shell basta colocar cmd= na frente do comando
+# {{warfile}}/backup/deploy/coadquirencia.${{wardata}}.war
+# se uma variável depende do resultado da outra é preciso coloca-lás em ordem
+- hosts: meu host
+  vars:
+    - warfile: /var/lib/tomcat7/webapps/coadquirencia.war
+    - wardata: cmd=(stat  -c "%y" {{ warfile }} | cut -d ' ' -f 1)
+    # Não está funcionando quando começo com as chaves duplas, por enquanto coloquei uma barra na frente para continuar
+    # e depois trato isso
+    - bakfile: /home/devop/backup/deploy/coadquirencia.{{wardata}}.war
+    - warpath: /home/devop/workspace/vendafacil/web-coadquirencia/coadquirencia.war
+
+  tasks:
+    - description: Generating war...
+      shell: grails war
+    - description: coadquirencia.war
+      shell: grails war coadquirencia.war
+    - description: fazendo backup do .war
+      copy: src={{ warfile }} dest={{ bakfile}}
+    - description: undeploy application
+      wget: http://admin:jmml72@localhost:8080/manager/text/undeploy?path=/coadquirencia -O - -q
+    - description: deploy application
+      wget: http://admin:jmml72@localhost:8080/manager/text/deploy?path=/coadquirencia&war=file:{{warpath}} -O - -q
+    - description: listando conteúdo  diretório web-coadquirencia
+      shell: ls {{ bakfile }}/workspace/vendafacil/web-coadquirencia/
+... #fim do arquivo
